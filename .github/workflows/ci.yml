@@ -22,7 +22,12 @@ jobs:
         python-version: '3.x' # Use the latest Python 3 version
 
     - name: Install dependencies
-      run: pip install -r requirements.txt pytest-cov
+      run: |
+        pip install -r requirements.txt pytest-cov
+        pip install ruff
+
+    - name: Lint
+      run: ruff check src
 
     - name: Run unit tests
       run: pytest --cov=src --cov-fail-under=80

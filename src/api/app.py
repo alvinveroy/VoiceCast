@@ -1,3 +1,4 @@
+import os
 from fastapi import FastAPI, Request, Depends
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
@@ -30,6 +31,10 @@ def create_app(settings: Settings, skip_logging: bool = False) -> FastAPI:
     load_dotenv()
     if not skip_logging:
         pass # setup_logging is now called in main.py
+
+    # Create logs and audio directories if they don't exist
+    os.makedirs(os.path.join(settings.PROJECT_ROOT, "logs"), exist_ok=True)
+    os.makedirs(settings.AUDIO_OUTPUT_DIR, exist_ok=True)
 
     log = structlog.get_logger(__name__) # Get logger after setup_logging is called
     log.info(f"Creating app with settings: {settings.model_dump_json()}")
