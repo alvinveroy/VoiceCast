@@ -2,7 +2,6 @@ import logging
 import logging.config
 import structlog
 from src.config.settings import Settings
-from rich.logging import RichHandler
 
 def setup_logging(settings: Settings):
     """Set up logging configuration."""
