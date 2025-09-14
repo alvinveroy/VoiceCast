@@ -53,7 +53,6 @@ def cli():
 @click.option("--deepgram-api-key", help="Deepgram API key.")
 def start(host, port, workers, reload, api_key, deepgram_api_key):
     """Start the VoiceCast server."""
-    settings.LOG_FORMAT = "console"
     setup_logging(settings)
     log.info("Starting VoiceCast server in foreground.")
     main_app(host, port, workers, api_key, deepgram_api_key)
