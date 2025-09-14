@@ -1,0 +1,13 @@
+[Unit]
+Description=VoiceCast TTS Daemon
+After=network.target
+
+[Service]
+User=your_user
+Group=your_group
+WorkingDirectory=/path/to/voicecast-daemon
+ExecStart=/path/to/voicecast-daemon/.venv/bin/python main.py --daemon
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

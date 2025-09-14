@@ -1,0 +1,1 @@
+/Users/alvin.tech/Projects/VoiceCast/voicecast-daemon/logs/voicecast-daemon.log
