@@ -169,10 +169,9 @@ docker run -d \
   -v $(pwd)/.env:/.env \
   -v $(pwd)/logs:/app/logs \
   -v $(pwd)/audio:/app/audio \
-  ghcr.io/your-github-username/voicecast-daemon:latest
+  ghcr.io/alvinveroy/voicecast:latest
 ```
 
-**Note:** Replace `your-github-username` with your actual GitHub username or organization name.
 
 
 
