@@ -2,9 +2,6 @@ import pytest
 from src.utils.logger import setup_logging
 from src.config.settings import Settings
 from unittest.mock import patch, MagicMock
-import logging
-import os
-from rich.logging import RichHandler
 
 @pytest.fixture
 def mock_settings():
@@ -13,50 +10,37 @@ def mock_settings():
     settings.LOG_FILE = "/tmp/test_log.log"
     settings.LOG_MAX_SIZE = 10485760
     settings.LOG_BACKUP_COUNT = 5
-    settings.LOG_FORMAT = "json" # Default to json for tests
     return settings
 
 @patch("logging.config.dictConfig")
-def test_setup_logging_json_format(mock_dictConfig, mock_settings):
-    mock_settings.LOG_FORMAT = "json"
+def test_setup_logging_formatters(mock_dictConfig, mock_settings):
     setup_logging(mock_settings)
 
     config = mock_dictConfig.call_args[0][0]
+
+    # Assert console formatter configuration
+    assert config["formatters"]["console"]["()"] == "structlog.stdlib.ProcessorFormatter"
+    assert config["formatters"]["console"]["processor"].__class__.__name__ == "ConsoleRenderer"
+
+    # Assert JSON formatter configuration
+    assert config["formatters"]["json"]["()"] == "structlog.stdlib.ProcessorFormatter"
     assert config["formatters"]["json"]["processor"].__class__.__name__ == "JSONRenderer"
+
+    # Assert handlers use correct formatters
+    assert config["handlers"]["console"]["formatter"] == "console"
     assert config["handlers"]["file"]["formatter"] == "json"
-    assert config["handlers"]["default"]["formatter"] == "json" # Ensure default handler is also json
-
-@patch("logging.basicConfig")
-def test_setup_logging_console_format(mock_basicConfig, mock_settings):
-    mock_settings.LOG_FORMAT = "console"
-    setup_logging(mock_settings)
-
-    mock_basicConfig.assert_called_once()
-    args, kwargs = mock_basicConfig.call_args
-    assert kwargs["level"] == mock_settings.LOG_LEVEL
-    assert kwargs["format"] == "%(message)s"
-    assert kwargs["datefmt"] == "[%X]"
-    assert isinstance(kwargs["handlers"][0], RichHandler)
-    assert kwargs["handlers"][0].rich_tracebacks == True
 
 @patch("logging.config.dictConfig")
-@patch("logging.basicConfig")
-def test_setup_logging_log_level(mock_basicConfig, mock_dictConfig, mock_settings):
-    # Test with JSON format
-    mock_settings.LOG_FORMAT = "json"
+def test_setup_logging_log_level(mock_dictConfig, mock_settings):
     mock_settings.LOG_LEVEL = "DEBUG"
     setup_logging(mock_settings)
+
     config = mock_dictConfig.call_args[0][0]
+
+    # Assert log level is applied to handlers and root logger
+    assert config["handlers"]["console"]["level"] == "DEBUG"
     assert config["handlers"]["file"]["level"] == "DEBUG"
     assert config["loggers"][""]["level"] == "DEBUG"
-
-    # Test with Console format
-    mock_dictConfig.reset_mock() # Reset mock for the next call
-    mock_settings.LOG_FORMAT = "console"
-    mock_settings.LOG_LEVEL = "WARNING"
-    setup_logging(mock_settings)
-    args, kwargs = mock_basicConfig.call_args
-    assert kwargs["level"] == mock_settings.LOG_LEVEL
 
 @patch("logging.config.dictConfig")
 def test_setup_logging_file_handler_config(mock_dictConfig, mock_settings):
