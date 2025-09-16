@@ -2,14 +2,9 @@ import pytest
 from fastapi.testclient import TestClient
 from src.api.app import create_app
 from src.config.settings import Settings
-from unittest.mock import patch, AsyncMock, MagicMock
-from pathlib import Path
+from unittest.mock import AsyncMock
 import httpx
 from src.utils.network_utils import get_local_ip
-import os
-from src.api.dependencies import get_cast_service, get_device_registry # Import get_cast_service and get_device_registry
-from src.services.cast_service import CastService # Import CastService
-from src.services.device_registry import DeviceRegistry # Import DeviceRegistry
 
 @pytest.fixture
 def settings():
@@ -178,3 +173,26 @@ async def test_tts_endpoint_general_exception(client, mocker):
     assert "task_id" in response_json
     assert isinstance(response_json["task_id"], str)
     mock_device_registry_instance.get_device_by_name.assert_called_with("Living Room Speaker")
+
+@pytest.mark.asyncio
+async def test_tts_endpoint_no_voice(client, mocker, settings):
+    client_instance, _, _ = client
+    mock_add_to_queue = mocker.patch("src.services.queue_service.QueueService.add_to_queue", return_value="mock_task_id")
+
+    response = client_instance.post(
+        "/api/v1/tts",
+        headers={"X-API-Key": "test_api_key"},
+        json={
+            "text": "Hello, world!",
+            "device_name": "Living Room Speaker"
+        }
+    )
+
+    assert response.status_code == 200
+    response_json = response.json()
+    assert response_json["message"] == "TTS request added to queue"
+    assert response_json["task_id"] == "mock_task_id"
+
+    mock_add_to_queue.assert_called_once()
+    call_args = mock_add_to_queue.call_args[0][0]
+    assert call_args['tts_request'].voice == settings.DEEPGRAM_MODEL
