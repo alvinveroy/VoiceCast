@@ -12,11 +12,10 @@ def setup_logging(settings: Settings):
         structlog.stdlib.add_logger_name,
         structlog.stdlib.PositionalArgumentsFormatter(),
         structlog.processors.TimeStamper(fmt="%Y-%m-%d %H:%M:%S"),
-        structlog.stdlib.ProcessorFormatter.wrap_for_formatter,
     ]
 
     structlog.configure(
-        processors=shared_processors,
+        processors=shared_processors + [structlog.stdlib.ProcessorFormatter.wrap_for_formatter],
         logger_factory=structlog.stdlib.LoggerFactory(),
         wrapper_class=structlog.stdlib.BoundLogger,
         cache_logger_on_first_use=True,
