@@ -84,6 +84,11 @@ run_docker() {
         echo_success ".env file created. Please configure it with your API keys and settings."
     fi
 
+    echo_info "Creating 'logs' and 'audio' directories..."
+    mkdir -p logs
+    mkdir -p audio
+    echo_success "Directories created."
+
     echo_info "Running the Docker container..."
     docker run -d \
       --name voicecast-daemon \
