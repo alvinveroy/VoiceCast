@@ -10,6 +10,7 @@ def setup_logging(settings: Settings):
     shared_processors = [
         structlog.stdlib.add_log_level,
         structlog.stdlib.add_logger_name,
+        structlog.stdlib.PositionalArgumentsFormatter(),
         structlog.processors.TimeStamper(fmt="%Y-%m-%d %H:%M:%S"),
         structlog.stdlib.ProcessorFormatter.wrap_for_formatter,
     ]

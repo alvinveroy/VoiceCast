@@ -20,6 +20,9 @@ async def text_to_speech(
     """Receive text and generate speech, then cast to a device."""
     log = structlog.get_logger(__name__) # Get logger after setup_logging is called
 
+    if not tts_request.voice:
+        tts_request.voice = settings.DEEPGRAM_MODEL
+
     if tts_request.device_name and not device_registry.get_device_by_name(tts_request.device_name):
         raise HTTPException(status_code=404, detail={"error": "No device available with the given device name"})
 

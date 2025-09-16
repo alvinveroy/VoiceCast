@@ -165,8 +165,9 @@ To run the application using Docker, you can use the following command:
 ```bash
 docker run -d \
   --name voicecast-daemon \
+  --restart unless-stopped \
   --network host \
-  -v $(pwd)/.env:/.env \
+  -v $(pwd)/.env:/app/.env \
   -v $(pwd)/logs:/app/logs \
   -v $(pwd)/audio:/app/audio \
   ghcr.io/alvinveroy/voicecast:latest
