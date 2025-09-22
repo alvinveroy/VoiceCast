@@ -14,20 +14,33 @@ from dotenv import load_dotenv
 import structlog # Import structlog
 from src.services.device_registry import DeviceRegistry
 from src.services.cast_service import CastService
+from src.services.watchdog_service import watchdog_loop
 from contextlib import asynccontextmanager
+import asyncio
 
 @asynccontextmanager
-async def lifespan(app: FastAPI, settings: Settings):
+async def lifespan(app: FastAPI, settings: Settings, skip_watchdog: bool = False):
     # Load the ML model
     app.state.device_registry = DeviceRegistry(settings)
     app.state.cast_service = CastService(settings)
     await app.state.device_registry.discover_devices()
+
+    # Start the watchdog service
+    watchdog_task = None
+    if not skip_watchdog:
+        watchdog_task = asyncio.create_task(watchdog_loop(app.state.device_registry))
+
     yield
     # Clean up the ML model and release the resources
     app.state.device_registry = None
     app.state.cast_service = None
 
-def create_app(settings: Settings, skip_logging: bool = False) -> FastAPI:
+    # Cancel the watchdog task
+    if watchdog_task:
+        watchdog_task.cancel()
+        await watchdog_task
+
+def create_app(settings: Settings, skip_logging: bool = False, skip_watchdog: bool = False) -> FastAPI:
     load_dotenv()
     if not skip_logging:
         pass # setup_logging is now called in main.py
@@ -52,7 +65,7 @@ def create_app(settings: Settings, skip_logging: bool = False) -> FastAPI:
         version=settings.VERSION,
         docs_url=settings.DOCS_URL,
         redoc_url=settings.REDOC_URL,
-        lifespan=lambda app: lifespan(app, settings), # Pass settings to lifespan
+        lifespan=lambda app: lifespan(app, settings, skip_watchdog), # Pass settings to lifespan
         dependencies=[Depends(verify_cloudflare_access)]
     )
 

@@ -2,9 +2,9 @@ import pytest
 from fastapi.testclient import TestClient
 from src.api.app import create_app
 from src.config.settings import Settings
-from unittest.mock import patch, AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock
 from src.api.security import get_api_key
-from fastapi import Depends, HTTPException
+from fastapi import HTTPException
 
 @pytest.fixture
 def settings():

@@ -6,6 +6,10 @@ from unittest.mock import AsyncMock
 import httpx
 from src.utils.network_utils import get_local_ip
 
+@pytest.fixture(autouse=True)
+def mock_discord_handler_httpx_client(mocker):
+    mocker.patch("src.utils.discord_handler.httpx.Client")
+
 @pytest.fixture
 def settings():
     return Settings(DEEPGRAM_API_KEY="test", GOOGLE_CAST_DEVICE_NAME="Test Device", API_KEY="test_api_key")
@@ -38,7 +42,7 @@ def client(mocker, settings):
     mock_cast_service_instance.play_audio = AsyncMock(return_value=None)
     mock_cast_service_instance.close = AsyncMock()
 
-    app = create_app(settings, skip_logging=True)
+    app = create_app(settings, skip_logging=True, skip_watchdog=True)
 
     with TestClient(app) as c:
         yield c, mock_cast_service_instance, mock_device_registry_instance
@@ -196,3 +200,21 @@ async def test_tts_endpoint_no_voice(client, mocker, settings):
     mock_add_to_queue.assert_called_once()
     call_args = mock_add_to_queue.call_args[0][0]
     assert call_args['tts_request'].voice == settings.DEEPGRAM_MODEL
+
+@pytest.mark.asyncio
+async def test_tts_endpoint_add_to_queue_exception(client, mocker):
+    client_instance, _, _ = client
+    mocker.patch("src.services.queue_service.QueueService.add_to_queue", side_effect=Exception("Queue full"))
+
+    response = client_instance.post(
+        "/api/v1/tts",
+        headers={"X-API-Key": "test_api_key"},
+        json={
+            "text": "Hello, world!",
+            "voice": "aura-2-helena-en",
+            "device_name": "Living Room Speaker"
+        }
+    )
+
+    assert response.status_code == 500
+    assert response.json() == {"detail": "An error occurred while adding request to queue."}

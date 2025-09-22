@@ -66,8 +66,15 @@ class Settings(BaseSettings):
     ALLOWED_HOSTS: List[str] = ["*"]
     CORS_ORIGINS: List[str] = ["*"]
     MAX_REQUEST_SIZE: int = 1048576
+    # Rate Limiting
     RATE_LIMIT_REQUESTS: int = 100
     RATE_LIMIT_WINDOW: int = 60
+
+    # Watchdog Configuration
+    DISCORD_WEBHOOK_URL: Optional[str] = None
+    WATCHDOG_INTERVAL: int = 60
+    CHROMECAST_DISCOVERY_INTERVAL: int = 300
+    CHROMECAST_REFRESH_INTERVAL: int = 1800
 
 @lru_cache()
 def get_settings() -> Settings:

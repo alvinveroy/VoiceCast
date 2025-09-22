@@ -1,5 +1,5 @@
 import pytest
-from unittest.mock import MagicMock, patch, AsyncMock
+from unittest.mock import patch, AsyncMock
 from fastapi.testclient import TestClient
 from src.api.app import create_app
 from src.config.settings import Settings
@@ -23,7 +23,7 @@ def client(mocker, settings):
     mock_cast_service_instance = mock_cast_service_class.return_value
     mock_cast_service_instance.close = AsyncMock()
 
-    app = create_app(settings, skip_logging=True)
+    app = create_app(settings, skip_logging=True, skip_watchdog=True)
     with TestClient(app) as c:
         yield c, mock_device_registry_instance
 

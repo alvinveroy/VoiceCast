@@ -1,10 +1,6 @@
 from src.utils.network_utils import get_local_ip
-import logging
-from unittest.mock import patch, mock_open, MagicMock
+from unittest.mock import patch
 import builtins
-import pytest
-import asyncio
-import socket
 
 original_open = builtins.open
 
