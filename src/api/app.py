@@ -28,7 +28,7 @@ async def lifespan(app: FastAPI, settings: Settings, skip_watchdog: bool = False
     # Start the watchdog service
     watchdog_task = None
     if not skip_watchdog:
-        watchdog_task = asyncio.create_task(watchdog_loop(app.state.device_registry))
+        watchdog_task = asyncio.create_task(watchdog_loop(app.state.device_registry, settings))
 
     log = structlog.get_logger(__name__)
     try:
