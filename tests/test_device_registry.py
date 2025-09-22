@@ -1,10 +1,9 @@
-import asyncio
 import pytest
-from unittest.mock import MagicMock, patch, AsyncMock
+from unittest.mock import MagicMock
 from src.services.device_registry import DeviceRegistry
 from src.config.settings import Settings
-import pychromecast
 import zeroconf
+from tests.helpers import create_mock_cast_info
 
 @pytest.fixture(autouse=True)
 def reset_singletons():
@@ -34,7 +33,6 @@ def mock_zeroconf(mocker):
     mocker.patch("zeroconf.Zeroconf", return_value=mock_zconf)
     return mock_zconf
 
-from tests.helpers import create_mock_cast_info
 
 @pytest.mark.asyncio
 async def test_discover_devices(mock_settings, mock_browser_and_listener, mock_zeroconf):
@@ -79,6 +77,20 @@ async def test_refresh_devices(mock_settings, mock_browser_and_listener, mock_ze
     assert len(devices["devices"]) == 3
     assert registry.get_devices()["generation"] == 2
     assert mock_browser.start_discovery.call_count == 2
+
+@pytest.mark.asyncio
+async def test_discover_devices_already_in_progress(mock_settings, mock_browser_and_listener, mock_zeroconf, mocker):
+    registry = DeviceRegistry(mock_settings)
+    mock_lock = mocker.patch.object(registry, "_discovery_lock")
+    mock_lock.acquire.return_value = False
+    mock_log_info = mocker.patch("src.services.device_registry.log.info")
+
+    await registry.discover_devices()
+
+    mock_lock.acquire.assert_called_once_with(blocking=False)
+    mock_log_info.assert_called_once_with("Discovery is already in progress.")
+    # Ensure no further discovery actions are taken
+    mock_browser_and_listener[0].start_discovery.assert_not_called()
 
 
 

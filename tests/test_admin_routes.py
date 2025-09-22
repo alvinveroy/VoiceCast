@@ -5,7 +5,6 @@ from src.config.settings import Settings
 from unittest.mock import patch, AsyncMock
 import os
 import signal
-import signal
 
 @pytest.fixture
 def settings():
@@ -22,6 +21,8 @@ def client(mocker, settings):
 
     mock_cast_service_instance = mock_cast_service_class.return_value
     mock_cast_service_instance.close = AsyncMock()
+
+    mocker.patch("src.api.app.watchdog_loop", new_callable=AsyncMock) # Patch the watchdog loop
 
     app = create_app(settings, skip_logging=True)
     with TestClient(app) as c:

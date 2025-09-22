@@ -9,7 +9,27 @@ repos:
       - id: pytest
         name: pytest
         entry: pytest
-        language: system
+        language: python
         types: [python]
-        pass_filenames: false # Run all tests, not just those related to changed files
-        always_run: true # Always run tests, even if no Python files changed
+        pass_filenames: false
+        always_run: true
+        additional_dependencies: [
+            "pytest",
+            "pytest-mock",
+            "pytest-cov",
+            "pytest-env",
+            "pytest-anyio",
+            "pytest-asyncio",
+            "deepgram-sdk",
+            "pychromecast",
+            "zeroconf",
+            "fastapi",
+            "uvicorn",
+            "pydantic",
+            "pydantic-settings",
+            "structlog",
+            "python-dotenv",
+            "slowapi",
+            "httpx",
+            "pytest-deadfixtures"
+        ]

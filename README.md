@@ -97,6 +97,25 @@ If you exceed this limit, you will receive a `429 Too Many Requests` response.
 
 The rate limit can be configured in the `.env` file by setting the `RATE_LIMIT_REQUESTS` and `RATE_LIMIT_WINDOW` variables.
 
+## Watchdog Service
+
+The application includes a watchdog service that monitors the health of the service and the network connection. It can send notifications to a Discord webhook for important events.
+
+### Features
+
+- **Internet Connectivity Check**: Monitors the internet connection and reports when it goes down and comes back up.
+- **Chromecast Device Discovery**: Periodically checks for Chromecast devices on the network and triggers a new discovery process if no devices are found.
+- **Discord Notifications**: Sends notifications for status changes, errors, and other important events to a configured Discord webhook.
+
+### Configuration
+
+The watchdog service can be configured using the following environment variables in your `.env` file:
+
+- `DISCORD_WEBHOOK_URL`: The URL of the Discord webhook to send notifications to. If not set, Discord notifications will be disabled.
+- `WATCHDOG_INTERVAL`: The interval in seconds at which the watchdog performs its checks. Defaults to `60` seconds.
+- `CHROMECAST_DISCOVERY_INTERVAL`: The interval in seconds for how often the watchdog checks for Chromecast devices. Defaults to `300` seconds.
+- `CHROMECAST_REFRESH_INTERVAL`: The interval in seconds for how often the watchdog refreshes Chromecast device information. Defaults to `1800` seconds.
+
 ## API Documentation
 
 Once the server is running, you can access the interactive API documentation at:

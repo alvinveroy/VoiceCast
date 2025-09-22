@@ -21,55 +21,64 @@ def setup_logging(settings: Settings):
         cache_logger_on_first_use=True,
     )
 
-    logging.config.dictConfig(
-        {
-            "version": 1,
-            "disable_existing_loggers": False,
-            "formatters": {
-                "console": {
-                    "()": "structlog.stdlib.ProcessorFormatter",
-                    "processor": structlog.dev.ConsoleRenderer(),
-                    "foreign_pre_chain": shared_processors,
-                },
-                "json": {
-                    "()": "structlog.stdlib.ProcessorFormatter",
-                    "processor": structlog.processors.JSONRenderer(),
-                    "foreign_pre_chain": shared_processors,
-                },
+    log_config = {
+        "version": 1,
+        "disable_existing_loggers": False,
+        "formatters": {
+            "console": {
+                "()": "structlog.stdlib.ProcessorFormatter",
+                "processor": structlog.dev.ConsoleRenderer(),
+                "foreign_pre_chain": shared_processors,
             },
-            "handlers": {
-                "console": {
-                    "level": log_level,
-                    "class": "logging.StreamHandler",
-                    "formatter": "console",
-                },
-                "file": {
-                    "level": log_level,
-                    "class": "logging.handlers.RotatingFileHandler",
-                    "filename": settings.LOG_FILE,
-                    "maxBytes": settings.LOG_MAX_SIZE,
-                    "backupCount": settings.LOG_BACKUP_COUNT,
-                    "formatter": "json",
-                },
+            "json": {
+                "()": "structlog.stdlib.ProcessorFormatter",
+                "processor": structlog.processors.JSONRenderer(),
+                "foreign_pre_chain": shared_processors,
             },
-            "loggers": {
-                "uvicorn.error": {
-                    "handlers": ["console", "file"],
-                    "level": "INFO",
-                    "propagate": False,
-                },
-                "uvicorn.access": {
-                    "handlers": ["console", "file"],
-                    "level": "INFO",
-                    "propagate": False,
-                },
-                "": {
-                    "handlers": ["console", "file"],
-                    "level": log_level,
-                    "propagate": True,
-                },
+        },
+        "handlers": {
+            "console": {
+                "level": log_level,
+                "class": "logging.StreamHandler",
+                "formatter": "console",
             },
+            "file": {
+                "level": log_level,
+                "class": "logging.handlers.RotatingFileHandler",
+                "filename": settings.LOG_FILE,
+                "maxBytes": settings.LOG_MAX_SIZE,
+                "backupCount": settings.LOG_BACKUP_COUNT,
+                "formatter": "json",
+            },
+        },
+        "loggers": {
+            "uvicorn.error": {
+                "handlers": ["console", "file"],
+                "level": "INFO",
+                "propagate": False,
+            },
+            "uvicorn.access": {
+                "handlers": ["console", "file"],
+                "level": "INFO",
+                "propagate": False,
+            },
+            "": {
+                "handlers": ["console", "file"],
+                "level": log_level,
+                "propagate": True,
+            },
+        },
+    }
+
+    if settings.DISCORD_WEBHOOK_URL:
+        log_config["handlers"]["discord"] = {
+            "level": "ERROR",
+            "class": "src.utils.discord_handler.DiscordHandler",
+            "webhook_url": settings.DISCORD_WEBHOOK_URL,
+            "formatter": "json",
         }
-    )
+        log_config["loggers"][""]["handlers"].append("discord")
+
+    logging.config.dictConfig(log_config)
 
 log = structlog.get_logger()

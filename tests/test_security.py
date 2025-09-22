@@ -1,5 +1,5 @@
 import pytest
-from fastapi import FastAPI, Request, Depends
+from fastapi import FastAPI, Depends
 from fastapi.testclient import TestClient
 from src.api.security import verify_cloudflare_access
 from src.config.settings import Settings, get_settings

@@ -10,6 +10,7 @@ def mock_settings():
     settings.LOG_FILE = "/tmp/test_log.log"
     settings.LOG_MAX_SIZE = 10485760
     settings.LOG_BACKUP_COUNT = 5
+    settings.DISCORD_WEBHOOK_URL = None
     return settings
 
 @patch("logging.config.dictConfig")
@@ -55,3 +56,32 @@ def test_setup_logging_file_handler_config(mock_dictConfig, mock_settings):
     assert file_handler["filename"] == "/var/log/my_app.log"
     assert file_handler["maxBytes"] == 20 * 1024 * 1024
     assert file_handler["backupCount"] == 10
+
+@patch("logging.config.dictConfig")
+def test_setup_logging_discord_handler(mock_dictConfig, mock_settings):
+    mock_settings.DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/123/abc"
+    setup_logging(mock_settings)
+
+    config = mock_dictConfig.call_args[0][0]
+
+    # Assert discord handler is configured
+    assert "discord" in config["handlers"]
+    discord_handler = config["handlers"]["discord"]
+    assert discord_handler["class"] == "src.utils.discord_handler.DiscordHandler"
+    assert discord_handler["webhook_url"] == "https://discord.com/api/webhooks/123/abc"
+    assert discord_handler["level"] == "ERROR"
+
+    # Assert discord handler is added to the root logger
+    assert "discord" in config["loggers"][""]["handlers"]
+
+@patch("src.utils.discord_handler.DiscordHandler.emit")
+def test_discord_handler_sends_log(mock_emit, mock_settings):
+    import logging
+
+    mock_settings.DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/123/abc"
+    setup_logging(mock_settings)
+
+    log = logging.getLogger("test_logger")
+    log.error("This is a test error.")
+
+    mock_emit.assert_called_once()

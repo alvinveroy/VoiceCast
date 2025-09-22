@@ -1,10 +1,13 @@
 import pytest
 import asyncio
-from collections import deque
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 from src.services.queue_service import QueueService
 from src.services.tts_service import TTSService
 from src.services.cast_service import CastService
+
+@pytest.fixture(autouse=True)
+def mock_discord_handler_httpx_client(mocker):
+    mocker.patch("src.utils.discord_handler.httpx.Client")
 
 @pytest.fixture
 def mock_tts_service():
@@ -80,9 +83,11 @@ async def test_process_queue_exception_handling(queue_service, mock_tts_service,
 
     mock_tts_service.generate_audio.side_effect = Exception("TTS error")
 
+    queue_service.processing = False # Ensure clean state
+
     queue_service.add_to_queue(task)
 
-    await asyncio.sleep(0.1) # Allow task to process
+    await asyncio.sleep(0.5) # Allow task to process
 
     mock_tts_service.generate_audio.assert_called_once_with(tts_request)
     mock_cast_service.play_audio.assert_not_called() # play_audio should not be called if TTS fails

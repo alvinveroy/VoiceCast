@@ -6,6 +6,7 @@ import requests
 import os
 import signal
 from src.config.settings import get_settings
+import socket
 
 # Helper function to wait for the server to start
 def wait_for_server(host="localhost", port=8080, timeout=120):
@@ -21,8 +22,6 @@ def wait_for_server(host="localhost", port=8080, timeout=120):
         if time.time() - start_time > timeout:
             raise RuntimeError("Server did not start in time")
         time.sleep(0.5)
-
-import socket
 
 def get_free_port():
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
