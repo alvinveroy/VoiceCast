@@ -25,13 +25,15 @@ async def test_send_discord_notification(mocker, settings):
     mock_settings_instance.DISCORD_WEBHOOK_URL = settings.DISCORD_WEBHOOK_URL
     mocker.patch("src.services.watchdog_service.settings", new=mock_settings_instance)
 
-    mock_post = mocker.patch("httpx.post", new_callable=AsyncMock)
-    mock_post.return_value = MagicMock()
-    mock_post.return_value.raise_for_status = lambda: None
+    mock_async_client = MagicMock()
+    mock_async_client.__aenter__.return_value.post = AsyncMock()
+    mock_async_client.__aenter__.return_value.post.return_value.raise_for_status = lambda: None
+    
+    mocker.patch("httpx.AsyncClient", return_value=mock_async_client)
 
     await send_discord_notification("test message")
 
-    mock_post.assert_awaited_once_with(
+    mock_async_client.__aenter__.return_value.post.assert_awaited_once_with(
         settings.DISCORD_WEBHOOK_URL, json={"content": "test message"}
     )
 
@@ -41,27 +43,33 @@ async def test_send_discord_notification_no_webhook_url(mocker, settings):
     mock_settings_instance.DISCORD_WEBHOOK_URL = None
     mocker.patch("src.services.watchdog_service.settings", new=mock_settings_instance)
 
-    mock_post = mocker.patch("httpx.post", new_callable=AsyncMock)
+    mock_async_client = MagicMock()
+    mock_async_client.__aenter__.return_value.post = AsyncMock()
+    mocker.patch("httpx.AsyncClient", return_value=mock_async_client)
 
     await send_discord_notification("test message")
 
-    mock_post.assert_not_awaited()
+    mock_async_client.__aenter__.return_value.post.assert_not_awaited()
 
 @pytest.mark.asyncio
 async def test_check_internet_connection_success(mocker):
-    mock_get = mocker.patch("httpx.get", new_callable=AsyncMock)
-    mock_get.return_value = MagicMock()
-    mock_get.return_value.raise_for_status = lambda: None
+    mock_async_client = MagicMock()
+    mock_async_client.__aenter__.return_value.get = AsyncMock()
+    mock_async_client.__aenter__.return_value.get.return_value.raise_for_status = lambda: None
+
+    mocker.patch("httpx.AsyncClient", return_value=mock_async_client)
 
     result = await check_internet_connection()
 
     assert result is True
-    mock_get.assert_awaited_once_with("https://8.8.8.8")
+    mock_async_client.__aenter__.return_value.get.assert_awaited_once_with("https://8.8.8.8")
 
 @pytest.mark.asyncio
 async def test_check_internet_connection_failure(mocker):
-    mock_get = mocker.patch("httpx.get", new_callable=AsyncMock)
-    mock_get.side_effect = httpx.RequestError("test error", request=httpx.Request("GET", "https://8.8.8.8"))
+    mock_async_client = MagicMock()
+    mock_async_client.__aenter__.return_value.get = AsyncMock(side_effect=httpx.RequestError("test error", request=httpx.Request("GET", "https://8.8.8.8")))
+
+    mocker.patch("httpx.AsyncClient", return_value=mock_async_client)
 
     result = await check_internet_connection()
 
@@ -73,13 +81,15 @@ async def test_send_discord_notification_request_error(mocker, settings):
     mock_settings_instance.DISCORD_WEBHOOK_URL = settings.DISCORD_WEBHOOK_URL
     mocker.patch("src.services.watchdog_service.settings", new=mock_settings_instance)
 
-    mock_post = mocker.patch("httpx.post", new_callable=AsyncMock)
-    mock_post.side_effect = httpx.RequestError("Test request error", request=httpx.Request("POST", settings.DISCORD_WEBHOOK_URL))
+    mock_async_client = MagicMock()
+    mock_async_client.__aenter__.return_value.post = AsyncMock(side_effect=httpx.RequestError("Test request error", request=httpx.Request("POST", settings.DISCORD_WEBHOOK_URL)))
+    
+    mocker.patch("httpx.AsyncClient", return_value=mock_async_client)
     mock_log_error = mocker.patch("src.utils.logger.log.error")
 
     await send_discord_notification("test message")
 
-    mock_post.assert_awaited_once()
+    mock_async_client.__aenter__.return_value.post.assert_awaited_once()
     mock_log_error.assert_called_once()
     assert "Failed to send Discord notification." in mock_log_error.call_args[0][0]
 

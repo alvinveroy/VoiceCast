@@ -14,7 +14,8 @@ async def send_discord_notification(message: str):
 
     try:
         payload = {"content": message}
-        response = await httpx.post(settings.DISCORD_WEBHOOK_URL, json=payload)
+        async with httpx.AsyncClient() as client:
+            response = await client.post(settings.DISCORD_WEBHOOK_URL, json=payload)
         response.raise_for_status()
         log.info("Sent Discord notification.", message=message)
     except httpx.RequestError as e:
@@ -23,7 +24,8 @@ async def send_discord_notification(message: str):
 async def check_internet_connection() -> bool:
     """Checks for internet connectivity by pinging Google's DNS."""
     try:
-        response = await httpx.get("https://8.8.8.8")
+        async with httpx.AsyncClient() as client:
+            response = await client.get("https://8.8.8.8")
         response.raise_for_status()
         return True
     except httpx.RequestError:

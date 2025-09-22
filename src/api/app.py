@@ -30,15 +30,21 @@ async def lifespan(app: FastAPI, settings: Settings, skip_watchdog: bool = False
     if not skip_watchdog:
         watchdog_task = asyncio.create_task(watchdog_loop(app.state.device_registry))
 
-    yield
-    # Clean up the ML model and release the resources
-    app.state.device_registry = None
-    app.state.cast_service = None
+    log = structlog.get_logger(__name__)
+    try:
+        yield
+    finally:
+        # Clean up the ML model and release the resources
+        app.state.device_registry = None
+        app.state.cast_service = None
 
-    # Cancel the watchdog task
-    if watchdog_task:
-        watchdog_task.cancel()
-        await watchdog_task
+        # Cancel the watchdog task
+        if watchdog_task:
+            watchdog_task.cancel()
+            try:
+                await watchdog_task
+            except asyncio.CancelledError:
+                log.info("Watchdog task cancelled.")
 
 def create_app(settings: Settings, skip_logging: bool = False, skip_watchdog: bool = False) -> FastAPI:
     load_dotenv()
